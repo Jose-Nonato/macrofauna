@@ -32,6 +32,7 @@ class AuthController:
             email: str = payload.get('sub')
             if email is None:
                 return None
-            return UserModel.get_user(email)
+            user = UserModel.get_user(email)
+            return user['_id']
         except JWTError:
             return None

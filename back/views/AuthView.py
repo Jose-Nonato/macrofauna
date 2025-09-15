@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from controller.AuthController import AuthController
-from models.UserModel import UserModel
+from models.UserModel import UserModel, UserExtrasUpdate
 
 router = APIRouter()
 oauth2scheme = OAuth2PasswordBearer(tokenUrl='token')
@@ -27,9 +27,16 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return {'access_token': access_token, 'token_type': 'bearer'}
 
 
-@router.get('/users/me')
-def read_users_me(token: str = Depends(oauth2scheme)):
+@router.put('/users/extras')
+def update_user_extras(user_update: UserExtrasUpdate, token: str = Depends(oauth2scheme)):
     current_user = AuthController.get_current_user(token)
+
     if current_user is None:
         raise HTTPException(status_code=401, detail='Invalid token')
-    return current_user
+
+    updated_users = UserModel.update_user(current_user, user_update.dict(exclude_unset=True))
+
+    if not updated_users:
+        raise HTTPException(status_code=404, detail="User not found or no valid data submitted")
+    
+    return {'status': status.HTTP_200_OK, 'message': 'User updated successfully!'}
