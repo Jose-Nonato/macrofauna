@@ -7,7 +7,7 @@ from passlib.hash import bcrypt
 collection = db["users"]
 
 
-class UserExtrasUpdate(BaseModel):
+class UserExtras(BaseModel):
     name: Optional[str] = None
     profission: Optional[str] = None
     training: Optional[str] = None
@@ -49,6 +49,15 @@ class UserModel(BaseModel):
     @staticmethod
     def hash_password(password):
         return bcrypt.hash(password)
+    
+
+    @staticmethod
+    def get_user_info(user_id: str):
+        user_info = collection.find_one({'_id': ObjectId(user_id)})
+        if not user_info:
+            return None
+        user_info.pop('_id', None)
+        return UserExtras(**user_info).model_dump()
 
 
     @staticmethod
