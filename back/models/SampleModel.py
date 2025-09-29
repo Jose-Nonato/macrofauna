@@ -1,10 +1,16 @@
-from pydantic import BaseModel
+from datetime import datetime
+from pydantic import BaseModel, Field
+from typing import Optional
+from bson import ObjectId
 from database import db
 
 
-collection = db['sample']
+collection = db['samples']
 
-class InsectSchema(BaseModel):
+class MonolithSchema(BaseModel):
+    iqms_sample: float = 0.0
+    rt: int = 0
+    density: float = 0.0
     earthworm: int
     ant: int
     isoptera: int
@@ -15,8 +21,12 @@ class InsectSchema(BaseModel):
     chilopoda: int
     hemiptera: int
     gasteropida: int
-    others: int
+    others: Optional[int] = 0
 
+class SampleMonolithsSchema(BaseModel):
+    first_monolith: MonolithSchema
+    second_monolith: MonolithSchema
+    third_monolith: MonolithSchema
 
 class PicturesSchema(BaseModel):
     north: str
@@ -24,30 +34,26 @@ class PicturesSchema(BaseModel):
     east: str
     west: str
 
-
-class SampleSchema(BaseModel):
-    user_id: str
-    register_date: str
-    longitude: str
-    latitude: str
+class FullSampleSchema(BaseModel):
+    id_user: str
+    register_date: datetime = Field(default_factory=datetime.utcnow)
     country: str
     state: str
     city: str
-    density: float
-    iqms: float
-    insect: InsectSchema
+    location: str
+    longitude: str
+    latitude: str
+    iqms: float = 0.0
+    sample: SampleMonolithsSchema
     picture: PicturesSchema
 
-
     @staticmethod
-    def create_sample(data: dict):
-        results = collection.insert_one(data)
-        return str(results.inserted_id)
-
+    def create_sample(data):
+        sample = data.model_dump()
+        inserted = collection.insert_one(sample)
+        return str(inserted.inserted_id)
 
     @staticmethod
     def get_sample(sample_id: str):
-        env = collection.find_one({'_id': sample_id})
-        if env:
-            return env
-        return None
+        doc = collection.find_one({'_id': ObjectId(sample_id)})
+        return FullSampleSchema(**doc)
