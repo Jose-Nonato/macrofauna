@@ -35,7 +35,7 @@ class PicturesSchema(BaseModel):
     west: str
 
 class FullSampleSchema(BaseModel):
-    id_user: str
+    id_user: str = Optional
     register_date: datetime = Field(default_factory=datetime.utcnow)
     country: str
     state: str
@@ -44,6 +44,7 @@ class FullSampleSchema(BaseModel):
     longitude: str
     latitude: str
     iqms: float = 0.0
+    rt: int = 0
     sample: SampleMonolithsSchema
     picture: PicturesSchema
 
@@ -57,3 +58,29 @@ class FullSampleSchema(BaseModel):
     def get_sample(sample_id: str):
         doc = collection.find_one({'_id': ObjectId(sample_id)})
         return FullSampleSchema(**doc)
+
+    @staticmethod
+    def update_sample(sample_id: str, data: dict):
+        results = collection.update_one(
+            {'_id': ObjectId(sample_id)},
+            {'$set': data}
+        )
+        return results.modified_count > 0
+
+    @staticmethod
+    def delete_sample(sample_id: str):
+        result = collection.delete_one({'_id': ObjectId(sample_id)})
+        return result.deleted_count > 0
+
+    @staticmethod
+    def get_sample_active_user(user_id: str):
+        data = collection.find(
+            {'id_user': user_id},
+            {'_id': 1, 'register_date': 1, 'country': 1, 'city': 1, 'state': 1, 'iqms': 1}
+        )
+        samples = []
+        for doc in data:
+            if "_id" in doc and isinstance(doc["_id"], ObjectId):
+                doc["_id"] = str(doc["_id"])  # 🔑 converte ObjectId -> string
+            samples.append(doc)
+        return samples

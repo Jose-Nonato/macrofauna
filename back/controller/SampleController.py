@@ -59,7 +59,9 @@ class SampleController:
     def calculate_iqms_for_sample(samples: FullSampleSchema):
         samples_dict = samples.model_dump()
         iqms_avg = 0.0
+        rt_avg = 0
         iqms_list = []
+        rt_list = []
 
         for monolith in samples_dict['sample']:
             den = SampleController.calculate_density(samples_dict['sample'][monolith])
@@ -69,8 +71,11 @@ class SampleController:
             samples_dict['sample'][monolith]['rt'] = iqms_individual['rt']
 
             iqms_list.append(iqms_individual['iqms_sample'])
+            rt_list.append(iqms_individual['rt'])
 
         iqms_avg = mean(iqms_list)
+        rt_avg = mean(rt_list)
         samples_dict['iqms'] = round(iqms_avg, 2)
+        samples_dict['rt'] = int(rt_avg)
 
         return FullSampleSchema(**samples_dict)
